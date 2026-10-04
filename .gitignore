@@ -1,0 +1,26 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+.env
+
+# Node
+frontend/node_modules/
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Build & OS
+.DS_Store
+Thumbs.db
+dist/
+build/
+
+# ML Data & Models (Optional - keeping models if small, but usually ignore raw big data)
+# ml/data/raw/
+# ml/data/processed/
+# ml/models/
