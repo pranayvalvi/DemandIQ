@@ -15,7 +15,7 @@ const Sidebar = () => {
     <div className="w-64 bg-white border-r h-full flex flex-col">
       <div className="p-6 border-b text-center">
         <h1 className="text-2xl font-bold text-blue-600">DemandIQ</h1>
-        <p className="text-sm text-gray-500 mt-1">Inventory Intelligence</p>
+        
       </div>
       <nav className="flex-1 p-4 space-y-2">
         {links.map((link) => (

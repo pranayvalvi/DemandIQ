@@ -31,5 +31,7 @@ class InventoryInsightResponse(BaseModel):
     current_stock: int
     predicted_demand: float
     expected_shortage: float
+    safety_stock: float
+    target_inventory: float
     stock_status: str
     suggested_reorder: float

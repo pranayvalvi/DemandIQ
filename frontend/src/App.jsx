@@ -1,28 +1,26 @@
-
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Sidebar from './components/Sidebar';
+import AppLayout from './components/layout/AppLayout';
 import Dashboard from './pages/Dashboard';
 import DemandForecast from './pages/DemandForecast';
-import ModelPerformance from './pages/ModelPerformance';
 import InventoryInsights from './pages/InventoryInsights';
+import WhatIfAnalysis from './pages/WhatIfAnalysis';
+import ModelPerformance from './pages/ModelPerformance';
+import Settings from './pages/Settings';
 
 function App() {
   return (
     <Router>
-      <div className="flex h-screen bg-gray-50">
-        <Sidebar />
-        <div className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50">
-          <main className="p-6">
-            <Routes>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/forecast" element={<DemandForecast />} />
-              <Route path="/performance" element={<ModelPerformance />} />
-              <Route path="/inventory" element={<InventoryInsights />} />
-            </Routes>
-          </main>
-        </div>
-      </div>
+      <Routes>
+        <Route element={<AppLayout />}>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/forecast" element={<DemandForecast />} />
+          <Route path="/inventory" element={<InventoryInsights />} />
+          <Route path="/what-if" element={<WhatIfAnalysis />} />
+          <Route path="/model-performance" element={<ModelPerformance />} />
+          <Route path="/settings" element={<Settings />} />
+        </Route>
+      </Routes>
     </Router>
   );
 }

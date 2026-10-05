@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { TrendingUp } from 'lucide-react';
+import { getStores, getProducts, getCategories, predictDemand } from '../services/api';
+import { Activity } from 'lucide-react';
 
 const DemandForecast = () => {
   const [formData, setFormData] = useState({
@@ -10,120 +9,120 @@ const DemandForecast = () => {
     lag_1: 30, lag_7: 35, lag_14: 30, lag_28: 32,
     rolling_mean_7: 32.5, rolling_mean_14: 31.0, rolling_mean_28: 31.5
   });
-
-  const [prediction, setPrediction] = useState(null);
   const [options, setOptions] = useState({ stores: [], products: [], categories: [] });
+  const [result, setResult] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // In a real app we'd fetch all three in parallel
-    const fetchData = async () => {
-      try {
-        const [st, pr, cat] = await Promise.all([
-          axios.get('http://localhost:8000/api/stores'),
-          axios.get('http://localhost:8000/api/products'),
-          axios.get('http://localhost:8000/api/categories')
-        ]);
-        setOptions({
-          stores: st.data.stores,
-          products: pr.data.products,
-          categories: cat.data.categories
-        });
-        if(st.data.stores.length) setFormData(f => ({...f, store: st.data.stores[0]}));
-        if(pr.data.products.length) setFormData(f => ({...f, product: pr.data.products[0]}));
-        if(cat.data.categories.length) setFormData(f => ({...f, category: cat.data.categories[0]}));
-      } catch(e) { console.error(e); }
-    };
-    fetchData();
+    Promise.all([getStores(), getProducts(), getCategories()]).then(([st, pr, cat]) => {
+      setOptions({ stores: st, products: pr, categories: cat });
+      if(st.length) setFormData(f => ({...f, store: st[0]}));
+      if(pr.length) setFormData(f => ({...f, product: pr[0]}));
+      if(cat.length) setFormData(f => ({...f, category: cat[0]}));
+    });
   }, []);
-
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
     try {
-      const res = await axios.post('http://localhost:8000/api/predict', formData);
-      setPrediction(res.data);
-    } catch(err) { console.error(err); }
+      const res = await predictDemand(formData);
+      setResult(res);
+    } catch(err) { console.error(err); } finally { setLoading(false); }
   };
 
+  const handleChange = (e) => setFormData({...formData, [e.target.name]: e.target.value});
+
   return (
-    <div>
-      <h2 className="text-3xl font-bold mb-6 text-gray-800">Demand Forecast</h2>
-      
+    <div className="space-y-8 max-w-5xl">
+      <div>
+        <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Demand Forecast</h2>
+        <p className="text-slate-500 mt-1">Generate ML-based demand forecasts for individual products.</p>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+        <div className="lg:col-span-2 bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="grid grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Store</label>
-                <select name="store" value={formData.store} onChange={handleChange} className="w-full p-2 border rounded-md">
+                <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">Store</label>
+                <select name="store" value={formData.store} onChange={handleChange} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-shadow">
                   {options.stores.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Product</label>
-                <select name="product" value={formData.product} onChange={handleChange} className="w-full p-2 border rounded-md">
+                <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">Product</label>
+                <select name="product" value={formData.product} onChange={handleChange} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-shadow">
                   {options.products.map(p => <option key={p} value={p}>{p}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-                <select name="category" value={formData.category} onChange={handleChange} className="w-full p-2 border rounded-md">
+                <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">Category</label>
+                <select name="category" value={formData.category} onChange={handleChange} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-shadow">
                   {options.categories.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Forecast Date</label>
-                <input type="date" name="forecast_date" value={formData.forecast_date} onChange={handleChange} className="w-full p-2 border rounded-md" />
+                <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">Forecast Date</label>
+                <input type="date" name="forecast_date" value={formData.forecast_date} onChange={handleChange} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-shadow" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Price</label>
-                <input type="number" step="0.01" name="price" value={formData.price} onChange={handleChange} className="w-full p-2 border rounded-md" />
+                <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">Price ($)</label>
+                <input type="number" step="0.01" name="price" value={formData.price} onChange={handleChange} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-shadow" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Promotion (1/0)</label>
-                <select name="promotion" value={formData.promotion} onChange={handleChange} className="w-full p-2 border rounded-md">
+                <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">Promotion Active</label>
+                <select name="promotion" value={formData.promotion} onChange={handleChange} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-shadow">
                   <option value={0}>No</option>
                   <option value={1}>Yes</option>
                 </select>
               </div>
             </div>
-            
-            <div className="pt-4 border-t">
-               <h4 className="text-sm font-semibold text-gray-500 mb-3">Historical Context (Auto-populated in production)</h4>
-               <div className="grid grid-cols-4 gap-2">
+
+            <div className="pt-6 border-t border-slate-100">
+               <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">Historical Context</h4>
+               <div className="grid grid-cols-4 gap-4">
                  {['lag_1', 'lag_7', 'lag_14', 'lag_28'].map(l => (
                    <div key={l}>
-                     <label className="block text-xs text-gray-500">{l}</label>
-                     <input type="number" name={l} value={formData[l]} onChange={handleChange} className="w-full p-1 text-sm border rounded" />
+                     <label className="block text-xs text-slate-500 mb-1 font-medium">{l}</label>
+                     <input type="number" name={l} value={formData[l]} onChange={handleChange} className="w-full bg-slate-50 border border-slate-200 rounded p-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 transition-shadow" />
                    </div>
                  ))}
                </div>
             </div>
 
-            <button type="submit" className="w-full bg-blue-600 text-white font-medium py-2 px-4 rounded-md hover:bg-blue-700 transition">
-              Generate Forecast
+            <button type="submit" disabled={loading} className="w-full bg-slate-900 hover:bg-slate-800 text-white font-medium py-3 rounded-lg transition-colors flex justify-center items-center">
+              {loading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : 'Generate Forecast'}
             </button>
           </form>
         </div>
 
         <div>
-          {prediction ? (
-            <div className="bg-gradient-to-br from-blue-500 to-blue-700 p-6 rounded-xl shadow-md text-white text-center">
-              <TrendingUp size={48} className="mx-auto mb-4 opacity-80" />
-              <h3 className="text-lg font-medium opacity-90 mb-1">Predicted Demand</h3>
-              <p className="text-5xl font-bold mb-4">{prediction.predicted_demand}</p>
-              <div className="text-sm opacity-80 bg-black/20 rounded-lg p-3">
-                <p>Store: {prediction.store}</p>
-                <p>Product: {prediction.product}</p>
-                <p>Date: {prediction.forecast_date}</p>
+          {result ? (
+            <div className="bg-indigo-600 rounded-xl shadow-lg border border-indigo-700 text-white overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <div className="p-6 border-b border-indigo-500/50 flex justify-between items-center">
+                <span className="text-xs font-bold uppercase tracking-wider text-indigo-100">Forecast Result</span>
+                <Activity size={16} className="text-indigo-200"/>
+              </div>
+              <div className="p-8 text-center relative overflow-hidden">
+                <div className="absolute -top-10 -right-10 w-32 h-32 bg-white rounded-full blur-3xl opacity-10"></div>
+                <h3 className="text-xl font-medium text-indigo-100 mb-2">{result.product}</h3>
+                <p className="text-sm text-indigo-200 mb-6">Predicted Demand</p>
+                <div className="text-6xl font-bold tracking-tight text-white mb-2 relative z-10">
+                  {result.predicted_demand.toFixed(1)}
+                </div>
+                <span className="text-sm text-indigo-200">units</span>
+              </div>
+              <div className="bg-indigo-900/50 p-6 space-y-3 text-sm">
+                <div className="flex justify-between"><span className="text-indigo-200">Date</span><span className="font-medium text-white">{result.forecast_date}</span></div>
+                <div className="flex justify-between"><span className="text-indigo-200">Store</span><span className="font-medium text-white">{result.store}</span></div>
+                <div className="flex justify-between"><span className="text-indigo-200">Model Engine</span><span className="font-bold text-white">XGBoost</span></div>
               </div>
             </div>
           ) : (
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 text-center text-gray-500 h-full flex flex-col justify-center">
-              <p>Fill out the form and submit to generate an ML-powered forecast.</p>
+            <div className="bg-white rounded-xl border border-slate-200 border-dashed h-full flex flex-col justify-center items-center p-8 text-center text-slate-500">
+              <Activity size={32} className="mb-4 opacity-20"/>
+              <p className="text-sm">Select parameters and generate a forecast to view results.</p>
             </div>
           )}
         </div>
@@ -131,5 +130,4 @@ const DemandForecast = () => {
     </div>
   );
 };
-
 export default DemandForecast;

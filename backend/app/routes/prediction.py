@@ -33,6 +33,8 @@ def get_inventory_insights(request: PredictionRequest):
             current_stock=request.inventory,
             predicted_demand=round(pred, 2),
             expected_shortage=insights["expected_shortage"],
+            safety_stock=insights["safety_stock"],
+            target_inventory=insights["target_inventory"],
             stock_status=insights["stock_status"],
             suggested_reorder=insights["suggested_reorder"]
         )

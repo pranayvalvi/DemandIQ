@@ -8,12 +8,13 @@ def main():
     results_dir = os.path.join("ml", "results")
     
     # Load all metrics
+    naive_df = pd.read_csv(os.path.join(results_dir, "naive_metrics.csv"))
     lr_df = pd.read_csv(os.path.join(results_dir, "lr_metrics.csv"))
     rf_df = pd.read_csv(os.path.join(results_dir, "rf_metrics.csv"))
     xgb_df = pd.read_csv(os.path.join(results_dir, "xgb_metrics.csv"))
     
     # Combine
-    comparison_df = pd.concat([lr_df, rf_df, xgb_df], ignore_index=True)
+    comparison_df = pd.concat([naive_df, lr_df, rf_df, xgb_df], ignore_index=True)
     comparison_df = comparison_df[['Model', 'MAE', 'RMSE', 'MAPE', 'R2']] # Reorder
     
     print("\nModel Comparison Table:")
@@ -31,12 +32,29 @@ def main():
     
     for idx, metric in enumerate(metrics):
         ax = axes[idx // 2, idx % 2]
-        sns.barplot(data=comparison_df, x='Model', y=metric, ax=ax, palette='viridis')
+        sns.barplot(data=comparison_df, x='Model', y=metric, ax=ax, hue='Model', palette='viridis', legend=False)
         ax.set_title(metric)
         ax.set_xlabel('')
         
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
     plt.savefig(os.path.join(results_dir, "model_comparison_charts.png"))
+    plt.close()
+    
+    # Feature Importance for XGBoost
+    import joblib
+    xgb_model = joblib.load(os.path.join("ml", "models", "xgboost.joblib"))
+    feature_config = joblib.load(os.path.join("ml", "models", "feature_config.joblib"))
+    
+    importance = xgb_model.feature_importances_
+    fi_df = pd.DataFrame({'Feature': feature_config['features'], 'Importance': importance})
+    fi_df = fi_df.sort_values(by='Importance', ascending=False)
+    fi_df.to_csv(os.path.join(results_dir, "feature_importance.csv"), index=False)
+    
+    plt.figure(figsize=(10, 6))
+    sns.barplot(data=fi_df, x='Importance', y='Feature', hue='Feature', palette='mako', legend=False)
+    plt.title('XGBoost Feature Importance')
+    plt.tight_layout()
+    plt.savefig(os.path.join(results_dir, "feature_importance.png"))
     plt.close()
     
     # Select best model (lowest RMSE)

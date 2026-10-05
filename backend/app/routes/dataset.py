@@ -30,3 +30,21 @@ def get_stores():
         return {"stores": df['Store'].unique().tolist()}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/system-info")
+def get_system_info():
+    try:
+        df = pd.read_csv(get_data_path())
+        return {
+            "version": "1.0.0",
+            "model": "XGBoost Regressor",
+            "dataset": {
+                "records": len(df),
+                "products": int(df['Product'].nunique()),
+                "stores": int(df['Store'].nunique()),
+                "start_date": df['Date'].min(),
+                "end_date": df['Date'].max()
+            }
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

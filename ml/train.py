@@ -14,6 +14,7 @@ def run_script(script_path):
 
 def main():
     scripts = [
+        os.path.join("ml", "src", "train_naive_baseline.py"),
         os.path.join("ml", "src", "train_linear_regression.py"),
         os.path.join("ml", "src", "train_random_forest.py"),
         os.path.join("ml", "src", "train_xgboost.py"),
